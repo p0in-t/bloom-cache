@@ -1,0 +1,5 @@
+"experiment","scenario","workload_alpha","latency_without_bloom","latency_with_bloom","latency_improvement_pct","origin_rate_without","origin_rate_with"
+"Cache_Performance","Low Skew",0.5,99.892,76.9313,22.9855243663156,0.7144,0.7144
+"Cache_Performance","Medium Skew",1,49.57,38.43,22.4732701230583,0.3318,0.3318
+"Cache_Performance","High Skew",1.5,10.635,8.309,21.8711800658204,0.074,0.074
+"Cache_Performance","Very High Skew",2,2.934,2.3651,19.3899113837764,0.0186,0.0186

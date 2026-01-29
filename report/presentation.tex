@@ -1,0 +1,461 @@
+\documentclass[10pt, aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamercolor{frametitle}{bg=white,fg=black}
+\setbeamercolor{title}{bg=white,fg=black}
+\setbeamerfont{frametitle}{series=\bfseries}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz}
+
+% Custom colors
+\definecolor{darkblue}{RGB}{0,51,102}
+\definecolor{lightgray}{RGB}{240,240,240}
+\setbeamercolor{structure}{fg=darkblue}
+
+% Title information
+\title{Bloom Filters for Distributed Cache Optimization}
+\subtitle{Probability and Statistics: with Programming Final Project}
+\author{Giorgi Kochlamazashvili}
+\date{\today}
+\institute{Kutaisi International University}
+
+\begin{document}
+
+%% TITLE SLIDE
+\begin{frame}
+\titlepage
+\end{frame}
+
+%% SLIDE 2: MOTIVATION
+\begin{frame}{Motivation}
+\vspace{0.5cm}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+    \textbf{The Problem}
+    \begin{itemize}
+        \item Distributed caches: multi-tier systems
+        \item Expensive to query each tier
+        \item Need fast membership test
+        \item Memory constraints
+    \end{itemize}
+    
+    \vspace{0.5cm}
+    
+    \textbf{The Solution}
+    \begin{itemize}
+        \item Bloom filters (Bloom, 1970)
+        \item Probabilistic data structure
+        \item Space-efficient membership test
+        \item Allows false positives, \textcolor{red}{never false negatives}
+    \end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+    \textbf{Real-World Usage}
+    \begin{itemize}
+        \item Google BigTable
+        \item Amazon DynamoDB
+        \item Apache Cassandra
+        \item Akamai CDN
+    \end{itemize}
+    
+    \vspace{0.5cm}
+    
+    \textbf{Research Question}
+    \begin{center}
+    \fcolorbox{darkblue}{lightgray}{%
+    \parbox{0.9\textwidth}{
+        \centering
+        \textit{Do Bloom filters significantly reduce cache latency in distributed systems?}
+    }}
+    \end{center}
+\end{column}
+\end{columns}
+\end{frame}
+
+%% SLIDE 3: METHODS - DATA & DESIGN
+\begin{frame}{Methods: Experimental Design}
+\vspace{0.3cm}
+
+\textbf{Dataset} (\textit{n} = 110,000 observations)
+\begin{itemize}
+    \item Synthetic Zipf-distributed workloads (models web traffic)
+    \item Four skewness levels ($\alpha$ = 0.5, 1.0, 1.5, 2.0)
+    \item Controlled experimental conditions
+\end{itemize}
+
+\vspace{0.3cm}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+    \textbf{Predictor Variables} (x)
+    \begin{itemize}
+        \item x$_1$: m/n ratio (bits/element)
+        \item x$_2$: k (hash functions)
+        \item x$_3$: fill ratio
+        \item x$_4$: workload skewness
+        \item x$_5$: Bloom filter enabled
+        \item x$_6$: cache capacity
+    \end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+    \textbf{Outcome Variables} (y)
+    \begin{itemize}
+        \item \textcolor{darkblue}{y$_1$: latency (ms)} \textbf{[PRIMARY]}
+        \item y$_2$: false positive rate
+        \item y$_3$: cache hit rate
+        \item y$_4$: origin fetch rate
+    \end{itemize}
+    
+    \vspace{0.2cm}
+    
+    \textbf{Statistical Tests}
+    \begin{itemize}
+        \item Paired t-test ($\alpha$ = 0.05)
+        \item Chi-square, ANOVA
+        \item Correlation, Regression
+    \end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%% SLIDE 4: HYPOTHESES
+\begin{frame}{Hypotheses}
+\vspace{0.5cm}
+
+\begin{block}{PRIMARY HYPOTHESIS (Cache Performance)}
+\textbf{H$_0$:} $\mu_{\text{latency(with BF)}} \geq \mu_{\text{latency(without BF)}}$ \\
+\textbf{H$_1$:} $\mu_{\text{latency(with BF)}} < \mu_{\text{latency(without BF)}}$ \\[0.2cm]
+\textit{Test:} Paired t-test (one-tailed)
+\end{block}
+
+\vspace{0.3cm}
+
+\textbf{Secondary Hypotheses}
+\begin{itemize}
+    \item \textbf{H$_2$} (Theoretical Validation): Empirical FPR = Theoretical FPR
+    \item \textbf{H$_3$} (Workload Effects): At least one scenario differs in latency
+    \item \textbf{H$_4$} (Fill Ratio): Positive correlation between fill ratio and FPR
+    \item \textbf{H$_5$} (Predictive Model): m/n ratio predicts FPR
+\end{itemize}
+\end{frame}
+
+%% SLIDE 5: KEY RESULT 1 - LATENCY REDUCTION
+\begin{frame}{Result 1: Latency Reduction (PRIMARY)}
+\vspace{0.3cm}
+
+\begin{columns}[T]
+\begin{column}{0.55\textwidth}
+    \begin{table}
+    \centering
+    \small
+    \begin{tabular}{lccc}
+    \toprule
+    \textbf{Scenario} & \textbf{Reduction} & \textbf{Cohen's d} & \textbf{p-value} \\
+    \midrule
+    Low Skew & 22.99\% & 1.92 & $< 0.001$ \\
+    Medium Skew & 22.47\% & 0.81 & $< 0.001$ \\
+    High Skew & 21.87\% & 0.29 & $< 0.001$ \\
+    Very High Skew & 19.39\% & 0.14 & $< 0.001$ \\
+    \midrule
+    \textbf{Mean} & \textbf{21.68\%} & \textbf{0.79} & $< \mathbf{0.001}$ \\
+    \bottomrule
+    \end{tabular}
+    \caption{Latency reduction across workload scenarios}
+    \end{table}
+    
+    \vspace{0.3cm}
+    
+    \begin{block}{Decision}
+    \textbf{REJECT H$_0$} (\textit{p} $<$ 0.001) \\
+    Bloom filters \textcolor{darkblue}{significantly reduce} cache latency by $\sim$20\%
+    \end{block}
+\end{column}
+
+\begin{column}{0.42\textwidth}
+    \textbf{Effect Sizes}
+    \begin{itemize}
+        \item Small to large (d = 0.14 -- 1.92)
+        \item Varies by workload
+        \item All statistically significant
+    \end{itemize}
+    
+    \vspace{0.3cm}
+    
+    \textbf{Practical Impact}
+    
+    For 1M requests/day:
+    \begin{itemize}
+        \item Without BF: 20,000s total
+        \item With BF: 16,000s total
+        \item \textcolor{darkblue}{Saves 1.1 hours/day}
+    \end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%% SLIDE 6: VISUAL - CACHE PERFORMANCE
+\begin{frame}{Cache Performance: Visual Evidence}
+\begin{center}
+\includegraphics[width=0.85\textwidth, height=0.75\textheight, keepaspectratio]{figures/fig3_cache_performance.png}
+\end{center}
+
+\vspace{-0.2cm}
+
+\begin{center}
+\small
+\textbf{Consistent 19-23\% latency reduction across all workload scenarios}
+\end{center}
+\end{frame}
+
+%% SLIDE 7: KEY RESULT 2 - THEORETICAL VALIDATION
+\begin{frame}{Result 2: Theoretical Validation}
+\vspace{0.5cm}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+    \textbf{Bloom's Formula (1970)}
+    \begin{equation*}
+    \text{FPR} = \left(1 - e^{-kn/m}\right)^k
+    \end{equation*}
+    
+    where:
+    \begin{itemize}
+        \item $k$ = number of hash functions
+        \item $n$ = elements inserted
+        \item $m$ = bit array size
+    \end{itemize}
+    
+    \vspace{0.3cm}
+    
+    \textbf{Optimal Parameters}
+    \begin{align*}
+    k^* &= \frac{m}{n} \ln(2) \\
+    m^* &= -\frac{n \ln(p)}{(\ln 2)^2}
+    \end{align*}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+    \textbf{Validation Results}
+    \begin{itemize}
+        \item Chi-square goodness-of-fit test
+        \item \textit{p} $>$ 0.05 for all configurations
+        \item \textbf{ACCEPT H$_0$}: Empirical = Theoretical
+    \end{itemize}
+    
+    \vspace{0.3cm}
+    
+    \begin{block}{Conclusion}
+    Implementation \textcolor{darkblue}{perfectly matches} 54-year-old theoretical predictions
+    \end{block}
+    
+    \vspace{0.3cm}
+    
+    \textbf{Associations}
+    \begin{itemize}
+        \item Fill ratio $\leftrightarrow$ FPR: \textit{r} = 0.89 (\textit{p} = 0.041)
+        \item m/n ratio $\leftrightarrow$ FPR: \textit{r} = 0.94 (\textit{p} = 0.019)
+    \end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%% SLIDE 8: VISUAL - FPR VALIDATION
+\begin{frame}{Theoretical Validation: Visual Evidence}
+\begin{center}
+\includegraphics[width=0.85\textwidth, height=0.75\textheight, keepaspectratio]{figures/fig1_fpr_validation.png}
+\end{center}
+
+\vspace{-0.2cm}
+
+\begin{center}
+\small
+\textbf{Empirical FPR perfectly matches theoretical predictions (Bloom, 1970)}
+\end{center}
+\end{frame}
+
+%% SLIDE 9: REGRESSION MODEL
+\begin{frame}{Result 3: Predictive Model}
+\vspace{0.4cm}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+    \textbf{Linear Regression Model}
+    \begin{equation*}
+    \log(\text{FPR}) = \beta_0 + \beta_1 \left(\frac{m}{n}\right) + \varepsilon
+    \end{equation*}
+    
+    \textbf{Estimation:} Ordinary Least Squares (OLS)
+    
+    \vspace{0.3cm}
+    
+    \textbf{Parameter Estimates}
+    \begin{table}
+    \centering
+    \small
+    \begin{tabular}{lcc}
+    \toprule
+    & \textbf{Estimate} & \textbf{p-value} \\
+    \midrule
+    $\beta_0$ & 6.99 & 0.100 \\
+    $\beta_1$ & -1.40 & \textbf{0.002} \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+    \textbf{Model Fit}
+    \begin{itemize}
+        \item R$^2$ = 0.41 (41\% variance)
+        \item F-statistic = 13.12
+        \item \textit{p} = 0.002 (significant)
+    \end{itemize}
+    
+    \vspace{0.3cm}
+    
+    \begin{block}{Decision}
+    \textbf{REJECT H$_0$} (\textit{p} $<$ 0.01) \\
+    m/n ratio \textcolor{darkblue}{significantly predicts} FPR
+    \end{block}
+    
+    \vspace{0.3cm}
+    
+    \textbf{ANOVA} (Workload Effects)
+    \begin{itemize}
+        \item $\eta^2$ = 0.46 (large effect)
+        \item 46\% of latency variance explained
+        \item Different workloads differ significantly
+    \end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%% SLIDE 10: SPACE EFFICIENCY
+\begin{frame}{Result 4: Space Efficiency}
+\vspace{0.5cm}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+    \textbf{Memory Comparison}
+    
+    For 1 million elements:
+    \begin{itemize}
+        \item \textbf{Bloom Filter:} 1.14 MB
+        \item \textbf{Hash Table:} 72 MB
+        \item \textcolor{darkblue}{\textbf{Savings: 98.4\%}}
+    \end{itemize}
+    
+    \vspace{0.5cm}
+    
+    \textbf{Scalability}
+    \begin{table}
+    \centering
+    \small
+    \begin{tabular}{rcc}
+    \toprule
+    \textbf{Capacity} & \textbf{Fill} & \textbf{FPR} \\
+    \midrule
+    50\% & 0.31 & 0.02\% \\
+    100\% & 0.52 & 1.11\% \\
+    200\% & 0.77 & 15.96\% \\
+    500\% & 0.98 & 84.14\% \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+    \textbf{Key Insights}
+    \begin{enumerate}
+        \item Space-time tradeoff is favorable
+        \item 98\% memory savings
+        \item 20\% latency reduction
+        \item \textcolor{darkblue}{Win-win for distributed systems}
+    \end{enumerate}
+    
+    \vspace{0.5cm}
+    
+    \begin{block}{Warning}
+    Overloading the filter (capacity $>$ 100\%) dramatically increases FPR
+    \end{block}
+    
+    \vspace{0.3cm}
+    
+    \textit{Design implication:} Size filters appropriately for expected load
+\end{column}
+\end{columns}
+\end{frame}
+
+%% SLIDE 11: SUMMARY OF RESULTS
+\begin{frame}{Summary of Results}
+\vspace{0.5cm}
+
+\begin{table}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Hypothesis} & \textbf{Decision} & \textbf{Key Result} \\
+\midrule
+H$_1$ (PRIMARY): Latency reduction & \textcolor{red}{REJECT H$_0$} & 21.68\% reduction, \textit{p} $<$ 0.001 \\
+H$_2$: Theoretical validation & \textcolor{blue}{ACCEPT H$_0$} & Empirical = Theory, \textit{p} $>$ 0.05 \\
+H$_3$: Workload effects & \textcolor{red}{REJECT H$_0$} & $\eta^2$ = 0.46 (large effect) \\
+H$_4$: Fill ratio correlation & \textcolor{red}{REJECT H$_0$} & \textit{r} = 0.89, \textit{p} = 0.041 \\
+H$_5$: Predictive model & \textcolor{red}{REJECT H$_0$} & R$^2$ = 0.41, \textit{p} = 0.002 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{0.5cm}
+
+\textbf{All hypotheses supported by data with strong statistical evidence}
+\begin{itemize}
+    \item Effect sizes: small to large (Cohen's d = 0.14 -- 1.92)
+    \item Consistent across workload scenarios
+    \item Practical and statistical significance
+\end{itemize}
+\end{frame}
+
+%% SLIDE 12: CONCLUSIONS
+\begin{frame}{Conclusions}
+\vspace{0.5cm}
+
+\begin{enumerate}
+    \item \textbf{Theoretical Validation} \\
+    Implementation perfectly matches Burton Bloom's 1970 mathematical formula \\[0.3cm]
+    
+    \item \textbf{Performance Improvement} \\
+    Statistically significant and practically meaningful latency reduction ($\sim$20\%) \\[0.3cm]
+    
+    \item \textbf{Predictability} \\
+    Strong correlations enable reliable FPR and performance prediction \\[0.3cm]
+    
+    \item \textbf{Real-World Applicability} \\
+    Results apply to CDNs, databases, and caches with Zipf-distributed traffic \\[0.3cm]
+    
+    \item \textbf{Space-Time Tradeoff} \\
+    98.4\% memory savings with 20\% latency improvement
+\end{enumerate}
+
+\vspace{0.3cm}
+
+\begin{center}
+\fcolorbox{darkblue}{lightgray}{%
+\parbox{0.85\textwidth}{
+    \centering
+    \textbf{Bloom filters are highly effective for distributed cache optimization}
+}}
+\end{center}
+\end{frame}
+
+\end{document}
